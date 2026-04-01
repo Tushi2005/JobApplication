@@ -1,3 +1,5 @@
+using JobApplication.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace JobApplication
 {
@@ -10,6 +12,9 @@ namespace JobApplication
             // Add services to the container.
 
             builder.Services.AddControllers();
+
+            builder.Services.AddDbContext<AppDbContext>(options =>
+               options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             var app = builder.Build();
 

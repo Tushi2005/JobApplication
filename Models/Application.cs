@@ -4,6 +4,7 @@
     {
         public int Id { get; set; }
         public int UserId { get; set; }
+        public User User { get; set; } = null!;
         public required string CompanyName { get; set; }
         public required string Position { get; set; }
         public ApplicationStatus Status { get; set; } = ApplicationStatus.Sent;
