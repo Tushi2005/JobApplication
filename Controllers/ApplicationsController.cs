@@ -1,12 +1,15 @@
 using JobApplication.DTOs.Application;
 using JobApplication.Models;
 using JobApplication.Services.Applications;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace JobApplication.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ApplicationsController : ControllerBase
     {
         private readonly IApplicationService _applicationService;
@@ -16,10 +19,18 @@ namespace JobApplication.Controllers
             _applicationService = applicationService;
         }
 
+        private int GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+                throw new UnauthorizedAccessException("User ID not found in token.");
+            return int.Parse(userIdClaim);
+        }
+
         [HttpGet]
         public async Task<ActionResult<List<ApplicationResponseDto>>> GetAll()
         {
-            int userId = 1;
+            int userId = GetCurrentUserId();
 
             var applications = await _applicationService.GetAllAsync(userId);
 
@@ -30,7 +41,7 @@ namespace JobApplication.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<ApplicationResponseDto>> GetById(int id)
         {
-            int userId = 1; // TODO: JWT-ből majd kiolvasni 
+            int userId = GetCurrentUserId();
 
             var application = await _applicationService.GetByIdAsync(id, userId);
 
@@ -43,7 +54,7 @@ namespace JobApplication.Controllers
         [HttpPost]
         public async Task<ActionResult<ApplicationResponseDto>> Create([FromBody] CreateApplicationDto dto)
         {
-            int userId = 1;
+            int userId = GetCurrentUserId();
 
             var application = new Application
             {
@@ -65,7 +76,7 @@ namespace JobApplication.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<ApplicationResponseDto>> Update(int id, [FromBody] UpdateApplicationDto dto)
         {
-            int userId = 1;
+            int userId = GetCurrentUserId();
 
             var application = new Application
             {
@@ -89,7 +100,7 @@ namespace JobApplication.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            int userId = 1;
+            int userId = GetCurrentUserId();
 
             var success = await _applicationService.DeleteAsync(id, userId);
 

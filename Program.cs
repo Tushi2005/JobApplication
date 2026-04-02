@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using System.Text;
 
 namespace JobApplication
@@ -23,7 +24,31 @@ namespace JobApplication
 
             builder.Services.AddScoped<IApplicationService, ApplicationService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
-            builder.Services.AddSwaggerGen();
+
+            builder.Services.AddSwaggerGen(options =>
+            {
+
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",       
+                    In = ParameterLocation.Header, 
+                    Type = SecuritySchemeType.Http, 
+                    Scheme = "Bearer",             
+                    BearerFormat = "JWT",          
+                    Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token."
+                });
+
+                options.AddSecurityRequirement(doc =>
+                    new OpenApiSecurityRequirement
+                    {
+            { 
+                new OpenApiSecuritySchemeReference("Bearer", doc),
+                new List<string>() 
+            }
+                    }
+                );
+            });
+
             builder.Services.AddEndpointsApiExplorer();
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
