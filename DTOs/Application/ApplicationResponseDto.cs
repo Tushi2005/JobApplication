@@ -1,6 +1,6 @@
 using JobApplication.Models;
 
-namespace JobApplication.DTOs
+namespace JobApplication.DTOs.Application
 {
     public class ApplicationResponseDto
     {

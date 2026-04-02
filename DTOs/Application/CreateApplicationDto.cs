@@ -1,4 +1,4 @@
-﻿namespace JobApplication.DTOs
+﻿namespace JobApplication.DTOs.Application
 {
     public class CreateApplicationDto
     {
