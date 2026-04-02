@@ -1,4 +1,4 @@
-using JobApplication.DTOs;
+using JobApplication.DTOs.Application;
 using JobApplication.Models;
 using JobApplication.Services;
 using Microsoft.AspNetCore.Mvc;
