@@ -1,6 +1,6 @@
 using JobApplication.DTOs.Application;
 using JobApplication.Models;
-using JobApplication.Services;
+using JobApplication.Services.Applications;
 using Microsoft.AspNetCore.Mvc;
 
 namespace JobApplication.Controllers

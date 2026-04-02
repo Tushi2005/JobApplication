@@ -3,7 +3,7 @@ using JobApplication.DTOs;
 using JobApplication.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace JobApplication.Services
+namespace JobApplication.Services.Applications
 {
     public class ApplicationService: IApplicationService
     {
