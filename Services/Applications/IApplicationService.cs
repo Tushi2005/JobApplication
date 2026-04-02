@@ -1,6 +1,6 @@
 ﻿using JobApplication.Models;
 
-namespace JobApplication.Services
+namespace JobApplication.Services.Applications
 {
     public interface IApplicationService
     {
