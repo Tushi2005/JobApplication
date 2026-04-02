@@ -1,4 +1,5 @@
 ﻿using JobApplication.Data;
+using JobApplication.DTOs;
 using JobApplication.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,6 +30,7 @@ namespace JobApplication.Services
 
         public async Task<Application> CreateAsync(Application application)
         {
+            
             _context.Applications.Add(application);
             await _context.SaveChangesAsync();
             return application;
