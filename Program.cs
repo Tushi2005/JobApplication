@@ -51,6 +51,15 @@ namespace JobApplication
 
             builder.Services.AddEndpointsApiExplorer();
 
+            builder.Services.AddCors(options => {
+                options.AddPolicy("AllowAngular", policy =>
+                {
+                    policy.WithOrigins("http://localhost:4200")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
+                });
+            });
+
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
@@ -76,7 +85,7 @@ namespace JobApplication
 
             app.UseAuthentication();
             app.UseAuthorization();
-
+            app.UseCors("AllowAngular");
             app.MapControllers();
 
             app.Run();
