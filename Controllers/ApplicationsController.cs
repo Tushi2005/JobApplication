@@ -110,6 +110,20 @@ namespace JobApplication.Controllers
             return NoContent();
         }
 
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> PatchStatus(int id, [FromBody] PatchDto dto)
+        {
+            var userId = GetCurrentUserId();
+            var application = await _applicationService.GetByIdAsync(id, userId);
+            if (application == null) return NotFound();
+
+            if (dto.Status != null)
+                application.Status = dto.Status.Value;
+
+            await _applicationService.UpdateAsync(id,application,userId);
+            return Ok(application);
+        }
+
         private static ApplicationResponseDto MapToDto(Application a)
         {
             return new ApplicationResponseDto
