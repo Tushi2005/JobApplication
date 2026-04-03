@@ -25,6 +25,12 @@ namespace JobApplication
             builder.Services.AddScoped<IApplicationService, ApplicationService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
 
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+                });
+
             builder.Services.AddSwaggerGen(options =>
             {
 

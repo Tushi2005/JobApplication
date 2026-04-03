@@ -1,6 +1,7 @@
 ﻿using JobApplication.Data;
 using JobApplication.DTOs;
 using JobApplication.Models;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
 namespace JobApplication.Services.Applications
