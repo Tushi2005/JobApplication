@@ -59,7 +59,7 @@ namespace JobApplication
             builder.Services.AddCors(options => {
                 options.AddPolicy("AllowAngular", policy =>
                 {
-                    policy.WithOrigins("http://localhost:4200")
+                    policy.WithOrigins("http://192.168.1.108:3000")
                           .AllowAnyHeader()
                           .AllowAnyMethod();
                 });
