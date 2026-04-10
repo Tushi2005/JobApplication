@@ -60,5 +60,6 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{
               "env": [],
-              "prune": true
+              "prune": true,
+              "pullImage": true
             }'
