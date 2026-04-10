@@ -15,10 +15,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
+      - name: Install .NET SDK locally (no system write)
+        run: |
+          DOTNET_DIR="${{ github.workspace }}/.dotnet"
+          mkdir -p "$DOTNET_DIR"
+          curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 10.0 --install-dir "$DOTNET_DIR"
+          echo "$DOTNET_DIR" >> $GITHUB_PATH
+          echo "DOTNET_ROOT=$DOTNET_DIR" >> $GITHUB_ENV
 
       - name: Restore dependencies
         run: dotnet restore
