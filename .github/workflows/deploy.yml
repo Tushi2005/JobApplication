@@ -13,4 +13,4 @@ jobs:
     steps:
       - name: Trigger Portainer Webhook
         run: |
-          curl -X POST "https://192.168.1.108:31015/api/stacks/webhooks/6eeb98f1-4eaf-4503-8239-96034cd1b1e9"
+          curl -k -X POST "https://192.168.1.108:31015/api/stacks/webhooks/6eeb98f1-4eaf-4503-8239-96034cd1b1e9"
