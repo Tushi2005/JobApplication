@@ -69,7 +69,7 @@ jobs:
       - name: Deploy to Portainer
         if: github.ref == 'refs/heads/master'
         run: |
-          curl -k -X POST "${{ secrets.PORTAINER_URL }}/api/stacks/5/update?endpointId=1" \
+          curl -k -X POST "${{ secrets.PORTAINER_URL }}/api/stacks/5/update?endpointId=3" \
             -H "Authorization: Bearer ${{ secrets.PORTAINER_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d '{
