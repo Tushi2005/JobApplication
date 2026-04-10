@@ -25,15 +25,12 @@ jobs:
 
       - name: Restore dependencies
         run: dotnet restore
-        working-directory: ${{ github.workspace }}/backend/JobApplication
-
+      
       - name: Build
         run: dotnet build --no-restore --configuration Release
-        working-directory: ${{ github.workspace }}/backend/JobApplication
       
       - name: Run tests
         run: dotnet test --no-build --configuration Release
-        working-directory: ${{ github.workspace }}/backend/JobApplication
 
       - name: Login to Docker Hub
         if: github.ref == 'refs/heads/master'
@@ -46,7 +43,7 @@ jobs:
         if: github.ref == 'refs/heads/master'
         uses: docker/build-push-action@v5
         with:
-          context: backend/JobApplication
+          context: .
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/jobtracker-backend:latest
 
