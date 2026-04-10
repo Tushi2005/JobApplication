@@ -18,7 +18,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ---------- .NET SDK cache (workspace-be) ----------
+      # ---------- .NET SDK cache ----------
       - name: Cache .NET SDK
         uses: actions/cache@v4
         id: dotnet-cache
@@ -42,7 +42,6 @@ jobs:
           echo "$DOTNET_DIR" >> $GITHUB_PATH
           echo "DOTNET_ROOT=$DOTNET_DIR" >> $GITHUB_ENV
 
-      # ---------- .NET restore, build, test ----------
       - name: Restore dependencies
         run: dotnet restore
 
@@ -52,7 +51,6 @@ jobs:
       - name: Run tests
         run: dotnet test --no-build --configuration Release
 
-      # ---------- Docker Hub login ----------
       - name: Login to Docker Hub
         if: github.ref == 'refs/heads/master'
         uses: docker/login-action@v3
@@ -60,7 +58,6 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # ---------- Build and push Docker image ----------
       - name: Build and push Docker image
         if: github.ref == 'refs/heads/master'
         uses: docker/build-push-action@v5
@@ -68,10 +65,7 @@ jobs:
           context: .
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/jobtracker-backend:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
-      # ---------- Deploy to Portainer ----------
       - name: Deploy to Portainer
         if: github.ref == 'refs/heads/master'
         run: |
