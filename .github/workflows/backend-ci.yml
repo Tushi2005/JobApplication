@@ -69,5 +69,5 @@ jobs:
       - name: Deploy backend with docker-compose
         if: github.ref == 'refs/heads/master'
         run: |
-          docker-compose pull backend
-          docker-compose up -d backend
+          docker compose pull backend
+          docker compose up -d backend
