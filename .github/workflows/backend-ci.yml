@@ -7,6 +7,9 @@ on:
     branches: [ master ]
   workflow_dispatch: 
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build-and-push:
     runs-on: self-hosted
@@ -15,27 +18,38 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+      # ---------- .NET SDK cache ----------
+      - name: Cache .NET SDK
+        uses: actions/cache@v4
+        id: dotnet-cache
         with:
-          dotnet-version: '10.0.x'
-        env:
-          DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
+          path: .dotnet
+          key: ${{ runner.os }}-dotnet-10.0
 
-      - name: Add dotnet to PATH
-        run: echo "${{ github.workspace }}/.dotnet" >> $GITHUB_PATH
+      - name: Install .NET SDK locally
+        if: steps.dotnet-cache.outputs.cache-hit != 'true'
+        run: |
+          DOTNET_DIR="${{ github.workspace }}/.dotnet"
+          mkdir -p "$DOTNET_DIR"
+          curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 10.0 --install-dir "$DOTNET_DIR"
+          echo "$DOTNET_DIR" >> $GITHUB_PATH
+          echo "DOTNET_ROOT=$DOTNET_DIR" >> $GITHUB_ENV
+
+      - name: Set .NET environment (cache hit)
+        if: steps.dotnet-cache.outputs.cache-hit == 'true'
+        run: |
+          DOTNET_DIR="${{ github.workspace }}/.dotnet"
+          echo "$DOTNET_DIR" >> $GITHUB_PATH
+          echo "DOTNET_ROOT=$DOTNET_DIR" >> $GITHUB_ENV
 
       - name: Restore dependencies
         run: dotnet restore
-        working-directory: backend/JobApplication
 
       - name: Build
         run: dotnet build --no-restore --configuration Release
-        working-directory: backend/JobApplication
 
       - name: Run tests
         run: dotnet test --no-build --configuration Release
-        working-directory: backend/JobApplication
 
       - name: Login to Docker Hub
         if: github.ref == 'refs/heads/master'
@@ -48,17 +62,12 @@ jobs:
         if: github.ref == 'refs/heads/master'
         uses: docker/build-push-action@v5
         with:
-          context: backend/JobApplication
+          context: .
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/jobtracker-backend:latest
 
-      - name: Deploy to Portainer
+      - name: Deploy backend with docker-compose
         if: github.ref == 'refs/heads/master'
         run: |
-          curl -X POST "${{ secrets.PORTAINER_URL }}/api/stacks/3/update?endpointId=1" \
-            -H "Authorization: Bearer ${{ secrets.PORTAINER_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "env": [],
-              "prune": true
-            }'
+          docker compose pull backend
+          docker compose up -d backend
