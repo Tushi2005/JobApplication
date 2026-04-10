@@ -3,6 +3,12 @@ services:
     image: adamtuska/jobtracker-backend:latest
     container_name: jobtracker-backend
 
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+      - ASPNETCORE_URLS=${ASPNETCORE_URLS}
+      - Jwt__Key=${Jwt__Key}
+
     ports:
       - "8080:8080"
     restart: unless-stopped
