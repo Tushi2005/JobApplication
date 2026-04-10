@@ -19,6 +19,11 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+        env:
+          DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
+
+      - name: Add dotnet to PATH
+        run: echo "${{ github.workspace }}/.dotnet" >> $GITHUB_PATH
 
       - name: Restore dependencies
         run: dotnet restore
