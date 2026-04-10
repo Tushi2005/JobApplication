@@ -15,23 +15,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install .NET SDK locally (no system write)
-        run: |
-          DOTNET_DIR="${{ github.workspace }}/.dotnet"
-          mkdir -p "$DOTNET_DIR"
-          curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 10.0 --install-dir "$DOTNET_DIR"
-          echo "$DOTNET_DIR" >> $GITHUB_PATH
-          echo "DOTNET_ROOT=$DOTNET_DIR" >> $GITHUB_ENV
+      # ---------- .NET SDK gyorsítótárazás (cache) ----------
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          cache: true   # NuGet csomagok cache-elése is
 
+      # ---------- .NET build és teszt ----------
       - name: Restore dependencies
         run: dotnet restore
-      
+
       - name: Build
         run: dotnet build --no-restore --configuration Release
-      
+
       - name: Run tests
         run: dotnet test --no-build --configuration Release
 
+      # ---------- Docker Hub login (csak master branch) ----------
       - name: Login to Docker Hub
         if: github.ref == 'refs/heads/master'
         uses: docker/login-action@v3
@@ -39,6 +40,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # ---------- Build és push (csak master branch) ----------
       - name: Build and push Docker image
         if: github.ref == 'refs/heads/master'
         uses: docker/build-push-action@v5
@@ -46,7 +48,10 @@ jobs:
           context: .
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/jobtracker-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
+      # ---------- Portainer deploy (csak master branch) ----------
       - name: Deploy to Portainer
         if: github.ref == 'refs/heads/master'
         run: |
