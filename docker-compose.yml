@@ -14,6 +14,7 @@ services:
     restart: unless-stopped
     networks:
       - ix-postgres_default
+      
 networks:
   ix-postgres_default:
     external: true
