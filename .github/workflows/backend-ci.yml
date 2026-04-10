@@ -66,14 +66,8 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/jobtracker-backend:latest
 
-      - name: Deploy to Portainer
+      - name: Deploy backend with docker-compose
         if: github.ref == 'refs/heads/master'
         run: |
-          curl -k -X POST "${{ secrets.PORTAINER_URL }}/api/stacks/5/git/redeploy?endpointId=3" \
-            -H "Authorization: Bearer ${{ secrets.PORTAINER_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "env": [],
-              "prune": true,
-              "pullImage": true
-            }'
+          docker-compose pull backend
+          docker-compose up -d backend
