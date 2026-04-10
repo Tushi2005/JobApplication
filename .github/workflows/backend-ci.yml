@@ -25,15 +25,15 @@ jobs:
 
       - name: Restore dependencies
         run: dotnet restore
-        working-directory: backend/JobApplication
+        working-directory: ${{ github.workspace }}/backend/JobApplication
 
       - name: Build
         run: dotnet build --no-restore --configuration Release
-        working-directory: backend/JobApplication
-
+        working-directory: ${{ github.workspace }}/backend/JobApplication
+      
       - name: Run tests
         run: dotnet test --no-build --configuration Release
-        working-directory: backend/JobApplication
+        working-directory: ${{ github.workspace }}/backend/JobApplication
 
       - name: Login to Docker Hub
         if: github.ref == 'refs/heads/master'
