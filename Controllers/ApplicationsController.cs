@@ -38,19 +38,6 @@ namespace JobApplication.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{id:int}")]
-        public async Task<ActionResult<ApplicationResponseDto>> GetById(int id)
-        {
-            int userId = GetCurrentUserId();
-
-            var application = await _applicationService.GetByIdAsync(id, userId);
-
-            if (application == null)
-                return NotFound();
-
-            return Ok(MapToDto(application));
-        }
-
         [HttpGet("companies")]
         public async Task<ActionResult<List<string>>> GetCompaniesByUser()
         {
@@ -65,6 +52,19 @@ namespace JobApplication.Controllers
             int userId = GetCurrentUserId();
             var positions = await _applicationService.GetPositionsByUserAsync(userId);
             return Ok(positions);
+        }
+
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<ApplicationResponseDto>> GetById(int id)
+        {
+            int userId = GetCurrentUserId();
+
+            var application = await _applicationService.GetByIdAsync(id, userId);
+
+            if (application == null)
+                return NotFound();
+
+            return Ok(MapToDto(application));
         }
 
         [HttpPost]
