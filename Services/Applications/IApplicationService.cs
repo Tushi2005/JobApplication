@@ -11,5 +11,6 @@ namespace JobApplication.Services.Applications
         Task<Application> CreateAsync(Application application);
         Task<Application?> UpdateAsync(int id, Application application, int userId);
         Task<bool> DeleteAsync(int id, int userId);
+        Task<Application?> PatchStatusAsync(int id, ApplicationStatus status, int userId);
     }
 }
