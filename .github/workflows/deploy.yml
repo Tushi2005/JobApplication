@@ -27,6 +27,11 @@ jobs:
           docker push adamtuska/jobtracker-backend:latest
 
       - name: Deploy on self-hosted runner
+        env:
+          JWT_KEY: ${{ secrets.JWT_KEY }}
+          ConnectionStrings__DefaultConnection: ${{ secrets.DB_CONNECTION }}
+          ASPNETCORE_ENVIRONMENT: Production
+          ASPNETCORE_URLS: "http://+:8080"
         run: |
           cd /mnt/Kulso_HDD/github/actions-runner/_work/JobApplication/JobApplication
           docker compose pull backend
