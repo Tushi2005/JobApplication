@@ -6,6 +6,8 @@ namespace JobApplication.Services.Applications
     {
         Task<List<Application>> GetAllAsync(int userId);
         Task<Application?> GetByIdAsync(int id, int userId);
+        Task<List<string>> GetCompaniesByUserAsync(int userId);
+        Task<List<string>> GetPositionsByUserAsync(int userId);
         Task<Application> CreateAsync(Application application);
         Task<Application?> UpdateAsync(int id, Application application, int userId);
         Task<bool> DeleteAsync(int id, int userId);
