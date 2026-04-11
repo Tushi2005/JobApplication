@@ -38,7 +38,7 @@ namespace JobApplication.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<ApplicationResponseDto>> GetById(int id)
         {
             int userId = GetCurrentUserId();
@@ -89,7 +89,7 @@ namespace JobApplication.Controllers
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, MapToDto(created));
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<ActionResult<ApplicationResponseDto>> Update(int id, [FromBody] UpdateApplicationDto dto)
         {
             int userId = GetCurrentUserId();
@@ -113,7 +113,7 @@ namespace JobApplication.Controllers
             return Ok(MapToDto(updated));
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
             int userId = GetCurrentUserId();
@@ -126,7 +126,7 @@ namespace JobApplication.Controllers
             return NoContent();
         }
 
-        [HttpPatch("{id}")]
+        [HttpPatch("{id:int}")]
         public async Task<IActionResult> PatchStatus(int id, [FromBody] PatchDto dto)
         {
             var userId = GetCurrentUserId();
