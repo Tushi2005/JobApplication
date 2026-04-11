@@ -7,7 +7,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
       - ASPNETCORE_URLS=${ASPNETCORE_URLS}
-      - JWT__KEY=${JWT__KEY}
+      - JWT_KEY=${JWT_KEY}
 
     ports:
       - "8080:8080"
