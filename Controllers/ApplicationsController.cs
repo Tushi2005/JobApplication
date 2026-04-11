@@ -51,6 +51,22 @@ namespace JobApplication.Controllers
             return Ok(MapToDto(application));
         }
 
+        [HttpGet("companies")]
+        public async Task<ActionResult<List<string>>> GetCompaniesByUser()
+        {
+            int userId = GetCurrentUserId();
+            var companies = await _applicationService.GetCompaniesByUserAsync(userId);
+            return Ok(companies);
+        }
+
+        [HttpGet("positions")]
+        public async Task<ActionResult<List<string>>> GetPositionsByUser()
+        {
+            int userId = GetCurrentUserId();
+            var positions = await _applicationService.GetPositionsByUserAsync(userId);
+            return Ok(positions);
+        }
+
         [HttpPost]
         public async Task<ActionResult<ApplicationResponseDto>> Create([FromBody] CreateApplicationDto dto)
         {
