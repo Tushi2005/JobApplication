@@ -27,5 +27,5 @@ jobs:
       - name: Deploy on self-hosted runner
         run: |
           cd /mnt/Kulso_HDD/github/actions-runner/_work/JobApplication/JobApplication
-          docker compose pull backend
-          docker compose up -d backend
+          docker compose --env-file stack.env pull backend
+          docker compose --env-file stack.env up -d backend
