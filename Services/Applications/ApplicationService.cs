@@ -85,5 +85,18 @@ namespace JobApplication.Services.Applications
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<Application?> PatchStatusAsync(int id, ApplicationStatus status, int userId)
+        {
+            var existing = await _context.Applications
+                .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
+
+            if (existing == null) return null;
+
+            existing.Status = status;
+            existing.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            return existing;
+        }
     }
 }

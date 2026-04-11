@@ -4,6 +4,7 @@ using JobApplication.Services.Applications;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using JobApplication.Mappers;
 
 namespace JobApplication.Controllers
 {
@@ -34,8 +35,7 @@ namespace JobApplication.Controllers
 
             var applications = await _applicationService.GetAllAsync(userId);
 
-            var result = applications.Select(a => MapToDto(a)).ToList();
-            return Ok(result);
+            return Ok(applications.Select(a => a.ToDto()).ToList());
         }
 
         [HttpGet("{id:int}")]
@@ -67,6 +67,19 @@ namespace JobApplication.Controllers
             return Ok(positions);
         }
 
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<ApplicationResponseDto>> GetById(int id)
+        {
+            int userId = GetCurrentUserId();
+
+            var application = await _applicationService.GetByIdAsync(id, userId);
+
+            if (application == null)
+                return NotFound();
+
+            return Ok(application.ToDto());
+        }
+
         [HttpPost]
         public async Task<ActionResult<ApplicationResponseDto>> Create([FromBody] CreateApplicationDto dto)
         {
@@ -86,7 +99,7 @@ namespace JobApplication.Controllers
 
             var created = await _applicationService.CreateAsync(application);
 
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, MapToDto(created));
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created.ToDto());
         }
 
         [HttpPut("{id:int}")]
@@ -110,7 +123,7 @@ namespace JobApplication.Controllers
             if (updated == null)
                 return NotFound();
 
-            return Ok(MapToDto(updated));
+            return Ok(updated.ToDto());
         }
 
         [HttpDelete("{id:int}")]
@@ -137,25 +150,7 @@ namespace JobApplication.Controllers
                 application.Status = dto.Status.Value;
 
             await _applicationService.UpdateAsync(id,application,userId);
-            return Ok(application);
-        }
-
-        private static ApplicationResponseDto MapToDto(Application a)
-        {
-            return new ApplicationResponseDto
-            {
-                Id = a.Id,
-                UserId = a.UserId,
-                CompanyName = a.CompanyName,
-                Position = a.Position,
-                Status = a.Status,
-                AppliedAt = a.AppliedAt,
-                InterviewAt = a.InterviewAt,
-                JobUrl = a.JobUrl,
-                Notes = a.Notes,
-                CreatedAt = a.CreatedAt,
-                UpdatedAt = a.UpdatedAt
-            };
+            return Ok(application.ToDto());
         }
     }
 }

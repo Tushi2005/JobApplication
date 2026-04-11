@@ -31,13 +31,13 @@ namespace JobApplication.Services.Auth
             return GenerateToken(user);
         }
 
-        public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
+        public async Task<AuthResponseDto?> RegisterAsync(RegisterDto dto)
         {
             var existing = await _context.Users.
         FirstOrDefaultAsync(a => a.Email == dto.Email);
 
             if (existing != null)
-                throw new Exception("Ez az email mar foglalt");
+                return null;
 
             var user = new User
             {
