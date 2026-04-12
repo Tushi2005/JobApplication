@@ -59,7 +59,10 @@ namespace JobApplication
             builder.Services.AddCors(options => {
                 options.AddPolicy("AllowAngular", policy =>
                 {
-                    policy.WithOrigins("http://localhost:4200")
+                    policy.WithOrigins(
+                        "http://192.168.1.108:3000",
+                        "http://localhost:4200"
+                        )
                           .AllowAnyHeader()
                           .AllowAnyMethod();
                 });
@@ -86,13 +89,17 @@ namespace JobApplication
             app.UseSwagger();
             app.UseSwaggerUI();
 
-            app.UseHttpsRedirection();
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseHttpsRedirection();
+            }
+
+            app.UseCors("AllowAngular");
 
             app.UseAuthentication();
             app.UseAuthorization();
-            app.UseCors("AllowAngular");
-            app.MapControllers();
 
+            app.MapControllers();
             app.Run();
         }
     }

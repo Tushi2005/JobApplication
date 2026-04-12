@@ -1,0 +1,38 @@
+name: Auto Deploy to Portainer
+
+on:
+  push:
+    branches:
+      - master
+      - feat/docker-setup
+
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image (no cache)
+        run: |
+          docker build --no-cache -t adamtuska/jobtracker-backend:latest .
+          docker push adamtuska/jobtracker-backend:latest
+
+      - name: Deploy on self-hosted runner
+        env:
+          JWT_KEY: ${{ secrets.JWT_KEY }}
+          ConnectionStrings__DefaultConnection: ${{ secrets.DB_CONNECTION }}
+          ASPNETCORE_ENVIRONMENT: Production
+          ASPNETCORE_URLS: "http://+:8080"
+        run: |
+          cd /mnt/Kulso_HDD/github/actions-runner/_work/JobApplication/JobApplication
+          docker compose pull backend
+          docker compose up -d backend

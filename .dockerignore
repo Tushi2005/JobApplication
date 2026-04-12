@@ -1,0 +1,46 @@
+# Bináris és objektum könyvtárak
+bin/
+obj/
+publish/
+out/
+
+# Verziókövető könyvtár
+.git/
+.gitignore
+.gitattributes
+
+# Fejlesztői környezet fájlok
+.vs/
+.vscode/
+.idea/
+
+# Log és temp fájlok
+*.log
+*.tmp
+*.temp
+*.cache
+
+# Felhasználói beállítások
+*.user
+*.suo
+*.userosscache
+*.usersecrets
+
+# Build kimenetek
+*.nupkg
+*.dll
+*.exe
+*.pdb
+
+# Docker által generált fájlok (ha van)
+docker-compose*.yml
+*.dockerignore
+
+# Egyéb nagy fájlok (ha vannak)
+*.zip
+*.7z
+*.rar
+*.tar.gz
+*.mp4
+*.avi
+*.mkv

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JobApplication.Services.Applications
 {
-    public class ApplicationService: IApplicationService
+    public class ApplicationService : IApplicationService
     {
         private readonly AppDbContext _context;
 
@@ -29,9 +29,27 @@ namespace JobApplication.Services.Applications
                 FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
         }
 
+        public async Task<List<string>> GetCompaniesByUserAsync(int userId)
+        {
+            return await _context.Applications.
+                Where(a => a.UserId == userId).
+                Select(a => a.CompanyName).
+                Distinct().
+                ToListAsync();
+        }
+
+        public async Task<List<string>> GetPositionsByUserAsync(int userId)
+        {
+            return await _context.Applications.
+                Where(a => a.UserId == userId).
+                Select(a => a.Position).
+                Distinct().
+                ToListAsync();
+        }
+
         public async Task<Application> CreateAsync(Application application)
         {
-            
+
             _context.Applications.Add(application);
             await _context.SaveChangesAsync();
             return application;
@@ -39,7 +57,7 @@ namespace JobApplication.Services.Applications
 
         public async Task<Application?> UpdateAsync(int id, Application application, int userId)
         {
-            var existing =  await _context.Applications.
+            var existing = await _context.Applications.
                 FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
 
             if (existing == null) return null;
@@ -66,6 +84,19 @@ namespace JobApplication.Services.Applications
             _context.Applications.Remove(existing);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<Application?> PatchStatusAsync(int id, ApplicationStatus status, int userId)
+        {
+            var existing = await _context.Applications
+                .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
+
+            if (existing == null) return null;
+
+            existing.Status = status;
+            existing.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            return existing;
         }
     }
 }
