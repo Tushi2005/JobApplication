@@ -52,6 +52,7 @@ namespace JobApplication.Controllers
             int userId = GetCurrentUserId();
             var positions = await _applicationService.GetPositionsByUserAsync(userId);
             return Ok(positions);
+         
         }
 
         [HttpGet("{id:int}")]
