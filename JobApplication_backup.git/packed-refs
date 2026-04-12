@@ -1,0 +1,11 @@
+# pack-refs with: peeled fully-peeled sorted 
+10ed8f4dd68783195074628e5395b9d5f9539d3f refs/heads/feat/applicationController
+c3f513fd264ff6646a2aa64ddb135ce16299f2c8 refs/heads/feat/controllers
+2a77d94dff46c84639ee2fe7bc03149478827f13 refs/heads/feat/docker-setup
+8396c0c7548755cfce19ee963a1780620ae02c35 refs/heads/feat/ef-setup
+04db9e26b0684ac1fed3af8a241bf4ca7f551a69 refs/heads/feat/getCompaniesAndPositions
+1b70414db8c4dc625d652ba09b35a01603e93859 refs/heads/feat/models
+a6111ab3c898014dac34a27ba5fc691033ee6dd6 refs/heads/feat/services
+9219596564b2119bdd6b3b4b70f70fc4865d84fa refs/heads/fix/route-collision-400
+138ca1cfd0d4dfb8ff273815d65e9f6f95655a8d refs/heads/master
+13e6927c3bfd66146e7bfd4af2ce6e5c3a0ff9ac refs/heads/refactor/postgreDb
