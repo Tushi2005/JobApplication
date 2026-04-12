@@ -38,19 +38,6 @@ namespace JobApplication.Controllers
             return Ok(applications.Select(a => a.ToDto()).ToList());
         }
 
-        [HttpGet("{id:int}")]
-        public async Task<ActionResult<ApplicationResponseDto>> GetById(int id)
-        {
-            int userId = GetCurrentUserId();
-
-            var application = await _applicationService.GetByIdAsync(id, userId);
-
-            if (application == null)
-                return NotFound();
-
-            return Ok(MapToDto(application));
-        }
-
         [HttpGet("companies")]
         public async Task<ActionResult<List<string>>> GetCompaniesByUser()
         {
