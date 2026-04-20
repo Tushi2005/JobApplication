@@ -94,7 +94,7 @@ namespace JobApplication
                 options.AddPolicy("AllowAngular", policy =>
                 {
                     policy.WithOrigins(
-                        "https://jobtracker.adamcloud.hu",
+                        "http://192.168.1.108:3000",
                         "http://localhost:4200"
                     )
                     .AllowAnyHeader()
