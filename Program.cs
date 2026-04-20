@@ -1,7 +1,9 @@
 using JobApplication.Data;
+using JobApplication.Models;
 using JobApplication.Services.Applications;
-using JobApplication.Services.Auth;
+using JobApplication.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -15,74 +17,90 @@ namespace JobApplication
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-
-            builder.Services.AddControllers();
-            builder.Services.AddDbContext<AppDbContext>(options =>
-               options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-            builder.Services.AddScoped<IApplicationService, ApplicationService>();
-            builder.Services.AddScoped<IAuthService, AuthService>();
-
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
                 {
-                    options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+                    options.JsonSerializerOptions.Converters.Add(
+                        new System.Text.Json.Serialization.JsonStringEnumConverter());
                 });
+
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            // Identity
+            builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+            {
+                options.Password.RequireDigit = true;
+                options.Password.RequiredLength = 6;
+                options.Password.RequireUppercase = false;
+                options.Password.RequireNonAlphanumeric = false;
+            })
+            .AddEntityFrameworkStores<AppDbContext>()
+            .AddDefaultTokenProviders();
+
+            // JWT
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                    ValidAudience = builder.Configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+                };
+            });
+
+            builder.Services.AddAuthorization();
+
+            // Services
+            builder.Services.AddScoped<IApplicationService, ApplicationService>();
 
             builder.Services.AddSwaggerGen(options =>
             {
-
                 options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
-                    Name = "Authorization",       
-                    In = ParameterLocation.Header, 
-                    Type = SecuritySchemeType.Http, 
-                    Scheme = "Bearer",             
-                    BearerFormat = "JWT",          
-                    Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token."
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    Description = "JWT Authorization header using the Bearer scheme."
                 });
 
                 options.AddSecurityRequirement(doc =>
                     new OpenApiSecurityRequirement
                     {
-            { 
-                new OpenApiSecuritySchemeReference("Bearer", doc),
-                new List<string>() 
-            }
+                        {
+                            new OpenApiSecuritySchemeReference("Bearer", doc),
+                            new List<string>()
+                        }
                     }
                 );
             });
 
             builder.Services.AddEndpointsApiExplorer();
 
-            builder.Services.AddCors(options => {
+            builder.Services.AddCors(options =>
+            {
                 options.AddPolicy("AllowAngular", policy =>
                 {
                     policy.WithOrigins(
-                        "http://192.168.1.108:3000",
+                        "https://jobtracker.adamcloud.hu",
                         "http://localhost:4200"
-                        )
-                          .AllowAnyHeader()
-                          .AllowAnyMethod();
+                    )
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
                 });
             });
-
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
-                {
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-                        ValidAudience = builder.Configuration["Jwt:Audience"],
-                        IssuerSigningKey = new SymmetricSecurityKey(
-                            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
-                    };
-                });
 
             var app = builder.Build();
 
@@ -95,11 +113,17 @@ namespace JobApplication
             }
 
             app.UseCors("AllowAngular");
-
             app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();
+
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                db.Database.Migrate();
+            }
+
             app.Run();
         }
     }

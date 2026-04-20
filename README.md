@@ -1,14 +1,14 @@
 # JobTracker – Backend
 
-ASP.NET Core 10 REST API állásjelentkezések kezeléséhez. JWT alapú hitelesítés, Entity Framework Core + PostgreSQL adatbázis, Docker alapú deployment GitHub Actions CI/CD pipeline-nal.
+ASP.NET Core 10 REST API állásjelentkezések kezeléséhez. ASP.NET Core Identity alapú hitelesítés, Entity Framework Core + PostgreSQL adatbázis, Docker alapú deployment GitHub Actions CI/CD pipeline-nal.
 
 ## Technológiai stack
 
 - **ASP.NET Core 10** – Web API
 - **Entity Framework Core** – Code First, migrációk
 - **PostgreSQL** – adatbázis (éles és fejlesztői környezetben egyaránt)
+- **ASP.NET Core Identity** – felhasználókezelés, jelszó hashelés
 - **JWT Bearer Authentication** – hitelesítés és azonosítás
-- **BCrypt.Net-Next** – jelszó hashelés
 - **Swagger UI** – API dokumentáció és tesztelés
 - **Docker + Docker Compose** – konténerizáció
 - **GitHub Actions** – CI/CD pipeline self-hosted runnerrel
@@ -19,25 +19,22 @@ ASP.NET Core 10 REST API állásjelentkezések kezeléséhez. JWT alapú hiteles
 JobApplication/
 ├── Controllers/
 │   ├── ApplicationsController.cs   # CRUD végpontok jelentkezésekhez
-│   └── AuthController.cs           # Regisztráció és bejelentkezés
+│   └── AuthController.cs           # Regisztráció és bejelentkezés (Identity)
 ├── Services/
-│   ├── Applications/
-│   │   ├── IApplicationService.cs
-│   │   └── ApplicationService.cs
-│   └── Auth/
-│       ├── IAuthService.cs
-│       └── AuthService.cs
+│   └── Applications/
+│       ├── IApplicationService.cs
+│       └── ApplicationService.cs
 ├── Models/
 │   ├── Application.cs
 │   ├── ApplicationStatus.cs        # Enum: Sent, InterviewScheduled, stb.
-│   └── User.cs
+│   └── ApplicationUser.cs          # IdentityUser leszármazott
 ├── DTOs/
 │   ├── Application/                # Create, Update, Patch, Response DTO-k
 │   └── Auth/                       # Login, Register, Response DTO-k
 ├── Mappers/
 │   └── ApplicationMapper.cs        # Extension method: Application → DTO
 ├── Data/
-│   └── AppDbContext.cs
+│   └── AppDbContext.cs             # IdentityDbContext<ApplicationUser>
 ├── Migrations/
 ├── Dockerfile
 ├── docker-compose.yml
@@ -55,24 +52,25 @@ A projekt a Separation of Concerns elvét követi:
 - **Mapper réteg** – entitás → DTO átalakítás extension methodok segítségével
 - **Data réteg** – `AppDbContext`, EF Core konfiguráció
 
-Minden service-hez interfész is tartozik (`IApplicationService`, `IAuthService`), amelyek az ASP.NET Core DI konténerbe Scoped élettartammal vannak regisztrálva.
+Az `IApplicationService` az ASP.NET Core DI konténerbe Scoped élettartammal van regisztrálva. A hitelesítést az ASP.NET Core Identity `UserManager<ApplicationUser>` és `SignInManager<ApplicationUser>` szolgáltatásai kezelik közvetlenül az `AuthController`-ben.
 
 ### Adatmodellek
 
-**User**
+**ApplicationUser** (IdentityUser leszármazott)
 | Mező | Típus | Leírás |
 |------|-------|--------|
-| Id | int | Elsődleges kulcs |
-| Email | string | Egyedi, kötelező |
-| PasswordHash | string | BCrypt hash |
-| FullName | string? | Opcionális |
+| Id | string (GUID) | Elsődleges kulcs (Identity) |
+| Email | string | Egyedi, kötelező (Identity) |
+| PasswordHash | string | Identity által kezelt hash |
+| UserName | string | Identity (email-lel megegyezik) |
+| FullName | string | Kötelező, egyedi mező |
 | CreatedAt | DateTime | Létrehozás dátuma |
 
 **Application**
 | Mező | Típus | Leírás |
 |------|-------|--------|
 | Id | int | Elsődleges kulcs |
-| UserId | int | Idegen kulcs (User) |
+| UserId | string | Idegen kulcs (AspNetUsers) |
 | CompanyName | string | Kötelező |
 | Position | string | Kötelező |
 | Status | ApplicationStatus | Enum (6 státusz) |
@@ -114,13 +112,14 @@ Minden védett végpont kizárólag a bejelentkezett felhasználó saját adatai
 
 ## Hitelesítés
 
-Az alkalmazás saját JWT implementációt használ ASP.NET Identity nélkül. A flow:
+Az alkalmazás ASP.NET Core Identity + JWT kombinációt használ. A flow:
 
-1. Regisztrációkor a jelszó BCrypt hasheléssel kerül tárolásra
-2. Sikeres bejelentkezés után a szerver JWT tokent állít elő (Claims: userId, email, fullName)
-3. A kliens minden kéréshez csatolja: `Authorization: Bearer <token>`
-4. Az ASP.NET Core JwtBearer middleware automatikusan validálja (issuer, audience, lifetime, signature)
-5. Hibás bejelentkezésnél a szerver nem árulja el, hogy az email vagy a jelszó volt-e helytelen
+1. Regisztrációkor az `UserManager.CreateAsync()` kezeli a jelszó hashelését és a felhasználó létrehozását
+2. Bejelentkezéskor a `SignInManager.CheckPasswordSignInAsync()` validálja a jelszót
+3. Sikeres bejelentkezés után a szerver JWT tokent állít elő (Claims: userId, email, fullName)
+4. A kliens minden kéréshez csatolja: `Authorization: Bearer <token>`
+5. Az ASP.NET Core JwtBearer middleware automatikusan validálja (issuer, audience, lifetime, signature)
+6. Hibás bejelentkezésnél a szerver nem árulja el, hogy az email vagy a jelszó volt-e helytelen
 
 ## Lokális fejlesztés
 
@@ -174,6 +173,10 @@ A GitHub Actions workflow (`deploy.yml`) minden master ágra történő push ese
 3. A self-hosted runneren keresztül deploy-olja a szerverre `docker compose`-zal
 
 Az érzékeny adatok (DB jelszó, JWT kulcs) GitHub Secrets-ben vannak tárolva, és környezeti változóként kerülnek be a konténerbe.
+
+### Migrációk production környezetben
+
+Az alkalmazás induláskor automatikusan futtatja a pending EF Core migrációkat (`db.Database.Migrate()`), így deploy után az adatbázis séma automatikusan frissül és a meglévő adatok megmaradnak. Nem szükséges manuálisan futtatni a `dotnet ef database update` parancsot a szerveren.
 
 ## Verziókezelés
 

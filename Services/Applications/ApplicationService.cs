@@ -1,7 +1,5 @@
 ﻿using JobApplication.Data;
-using JobApplication.DTOs;
 using JobApplication.Models;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
 namespace JobApplication.Services.Applications
@@ -15,50 +13,48 @@ namespace JobApplication.Services.Applications
             _context = context;
         }
 
-        public async Task<List<Application>> GetAllAsync(int userId)
+        public async Task<List<Application>> GetAllAsync(string userId)
         {
-            return await _context.
-                Applications.
-                Where(a => a.UserId == userId).
-                ToListAsync();
+            return await _context.Applications
+                .Where(a => a.UserId == userId)
+                .ToListAsync();
         }
 
-        public async Task<Application?> GetByIdAsync(int id, int userId)
+        public async Task<Application?> GetByIdAsync(int id, string userId)
         {
-            return await _context.Applications.
-                FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
+            return await _context.Applications
+                .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
         }
 
-        public async Task<List<string>> GetCompaniesByUserAsync(int userId)
+        public async Task<List<string>> GetCompaniesByUserAsync(string userId)
         {
-            return await _context.Applications.
-                Where(a => a.UserId == userId).
-                Select(a => a.CompanyName).
-                Distinct().
-                ToListAsync();
+            return await _context.Applications
+                .Where(a => a.UserId == userId)
+                .Select(a => a.CompanyName)
+                .Distinct()
+                .ToListAsync();
         }
 
-        public async Task<List<string>> GetPositionsByUserAsync(int userId)
+        public async Task<List<string>> GetPositionsByUserAsync(string userId)
         {
-            return await _context.Applications.
-                Where(a => a.UserId == userId).
-                Select(a => a.Position).
-                Distinct().
-                ToListAsync();
+            return await _context.Applications
+                .Where(a => a.UserId == userId)
+                .Select(a => a.Position)
+                .Distinct()
+                .ToListAsync();
         }
 
         public async Task<Application> CreateAsync(Application application)
         {
-
             _context.Applications.Add(application);
             await _context.SaveChangesAsync();
             return application;
         }
 
-        public async Task<Application?> UpdateAsync(int id, Application application, int userId)
+        public async Task<Application?> UpdateAsync(int id, Application application, string userId)
         {
-            var existing = await _context.Applications.
-                FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
+            var existing = await _context.Applications
+                .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
 
             if (existing == null) return null;
 
@@ -75,10 +71,10 @@ namespace JobApplication.Services.Applications
             return existing;
         }
 
-        public async Task<bool> DeleteAsync(int id, int userId)
+        public async Task<bool> DeleteAsync(int id, string userId)
         {
-            var existing = await _context.Applications.
-                FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
+            var existing = await _context.Applications
+                .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
 
             if (existing == null) return false;
             _context.Applications.Remove(existing);
@@ -86,7 +82,7 @@ namespace JobApplication.Services.Applications
             return true;
         }
 
-        public async Task<Application?> PatchStatusAsync(int id, ApplicationStatus status, int userId)
+        public async Task<Application?> PatchStatusAsync(int id, ApplicationStatus status, string userId)
         {
             var existing = await _context.Applications
                 .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
