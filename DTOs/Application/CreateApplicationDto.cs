@@ -2,22 +2,13 @@
 
 namespace JobApplication.DTOs.Application
 {
-    public class CreateApplicationDto
+    public class CreateApplicationDto: ApplicationBaseDto
     {
-        [Required(ErrorMessage = "Company name is required")]
-        [MaxLength(30, ErrorMessage = "Company name too long")]
-        public required string CompanyName { get; set; }
-
-        [Required(ErrorMessage = "Position is required")]
-        public required string Position { get; set; }
-        public DateTime AppliedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? InterviewAt { get; set; }
-
-        [Url(ErrorMessage = "Invalid URL format")]
-        public string? JobUrl { get; set; }
-        public string? Notes
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public CreateApplicationDto()
         {
-            get; set;
+            AppliedAt = DateTime.UtcNow;
+            
         }
     }
 }

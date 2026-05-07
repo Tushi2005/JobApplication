@@ -62,45 +62,21 @@ namespace JobApplication.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<ApplicationResponseDto>> Create([FromBody] CreateApplicationDto dto)
+        public async Task<ActionResult<ApplicationResponseDto>> Create([FromBody] CreateApplicationDto applicationDto)
         {
             string userId = GetCurrentUserId();
-
-            var application = new Application
-            {
-                UserId = userId,
-                CompanyName = dto.CompanyName,
-                Position = dto.Position,
-                AppliedAt = dto.AppliedAt,
-                InterviewAt = dto.InterviewAt,
-                JobUrl = dto.JobUrl,
-                Notes = dto.Notes,
-                Status = ApplicationStatus.Sent
-            };
-
-            var created = await _applicationService.CreateAsync(application);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created.ToDto());
+            var created = await _applicationService.CreateAsync(applicationDto, userId);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id}, created);
         }
 
         [HttpPut("{id:int}")]
-        public async Task<ActionResult<ApplicationResponseDto>> Update(int id, [FromBody] UpdateApplicationDto dto)
+        public async Task<ActionResult<ApplicationResponseDto>> Update(int id, [FromBody] UpdateApplicationDto updateDto)
         {
             string userId = GetCurrentUserId();
 
-            var application = new Application
-            {
-                CompanyName = dto.CompanyName,
-                Position = dto.Position,
-                Status = dto.Status,
-                AppliedAt = dto.AppliedAt,
-                InterviewAt = dto.InterviewAt,
-                JobUrl = dto.JobUrl,
-                Notes = dto.Notes
-            };
-
-            var updated = await _applicationService.UpdateAsync(id, application, userId);
+            var updated = await _applicationService.UpdateAsync(id, updateDto, userId);
             if (updated == null) return NotFound();
-            return Ok(updated.ToDto());
+            return Ok(updated);
         }
 
         [HttpDelete("{id:int}")]
@@ -113,7 +89,7 @@ namespace JobApplication.Controllers
         }
 
         [HttpPatch("{id:int}")]
-        public async Task<IActionResult> PatchStatus(int id, [FromBody] PatchDto dto)
+        public async Task<IActionResult> PatchStatus(int id, [FromBody] PatchApplicationStatusDto dto)
         {
             string userId = GetCurrentUserId();
             if (dto.Status == null) return BadRequest();

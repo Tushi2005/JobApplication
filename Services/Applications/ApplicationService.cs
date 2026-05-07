@@ -50,31 +50,25 @@ namespace JobApplication.Services.Applications
                 .ToListAsync();
         }
 
-        public async Task<Application> CreateAsync(Application application)
+        public async Task<ApplicationResponseDto> CreateAsync(CreateApplicationDto applicationDto, string userId)
         {
+            var application = _mapper.Map<Application>(applicationDto);
+            application.UserId = userId;
             _context.Applications.Add(application);
             await _context.SaveChangesAsync();
-            return application;
+            return _mapper.Map<ApplicationResponseDto>(application);
         }
 
-        public async Task<Application?> UpdateAsync(int id, Application application, string userId)
+        public async Task<ApplicationResponseDto?> UpdateAsync(int id, UpdateApplicationDto applicationDto, string userId)
         {
             var existing = await _context.Applications
                 .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
 
             if (existing == null) return null;
-
-            existing.CompanyName = application.CompanyName;
-            existing.Position = application.Position;
-            existing.Status = application.Status;
-            existing.AppliedAt = application.AppliedAt;
-            existing.InterviewAt = application.InterviewAt;
-            existing.JobUrl = application.JobUrl;
-            existing.Notes = application.Notes;
-            existing.UpdatedAt = DateTime.UtcNow;
+            _mapper.Map(applicationDto, existing);
 
             await _context.SaveChangesAsync();
-            return existing;
+            return _mapper.Map<ApplicationResponseDto>(existing);
         }
 
         public async Task<bool> DeleteAsync(int id, string userId)
