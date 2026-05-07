@@ -1,11 +1,12 @@
-﻿using JobApplication.Models;
+﻿using JobApplication.DTOs.Application;
+using JobApplication.Models;
 
 namespace JobApplication.Services.Applications
 {
     public interface IApplicationService
     {
-        Task<List<Application>> GetAllAsync(string userId);
-        Task<Application?> GetByIdAsync(int id, string userId);
+        Task<List<ApplicationResponseDto>> GetAllAsync(string userId);
+        Task<ApplicationResponseDto?> GetByIdAsync(int id, string userId);
         Task<List<string>> GetCompaniesByUserAsync(string userId);
         Task<List<string>> GetPositionsByUserAsync(string userId);
         Task<Application> CreateAsync(Application application);

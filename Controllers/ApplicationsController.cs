@@ -33,7 +33,7 @@ namespace JobApplication.Controllers
         {
             string userId = GetCurrentUserId();
             var applications = await _applicationService.GetAllAsync(userId);
-            return Ok(applications.Select(a => a.ToDto()).ToList());
+            return Ok(applications);
         }
 
         [HttpGet("companies")]
@@ -58,7 +58,7 @@ namespace JobApplication.Controllers
             string userId = GetCurrentUserId();
             var application = await _applicationService.GetByIdAsync(id, userId);
             if (application == null) return NotFound();
-            return Ok(application.ToDto());
+            return application;
         }
 
         [HttpPost]

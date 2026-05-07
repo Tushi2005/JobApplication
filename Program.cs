@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Text;
+using JobApplication.Mappers;
 
 namespace JobApplication
 {
@@ -63,6 +64,8 @@ namespace JobApplication
 
             // Services
             builder.Services.AddScoped<IApplicationService, ApplicationService>();
+
+            builder.Services.AddAutoMapper(typeof(AutoMapperApplication).Assembly);
 
             builder.Services.AddSwaggerGen(options =>
             {
