@@ -3,6 +3,7 @@ using JobApplication.Exceptions;
 using JobApplication.Extensions;
 using JobApplication.Mappers;
 using JobApplication.Services.Applications;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -35,6 +36,15 @@ namespace JobApplication
             builder.Services.AddScoped<IApplicationService, ApplicationService>();
 
             var app = builder.Build();
+
+            // Cloudflare Tunnel proxy mögött az app nem látja a valódi HTTPS scheme-t és hostot,
+            // ezért kell a forwarded headers — nélküle a Google OAuth callback URI-t rosszul konstruálja
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor |
+                                   ForwardedHeaders.XForwardedProto |
+                                   ForwardedHeaders.XForwardedHost
+            });
 
             app.UseExceptionHandler();
             app.UseSerilogRequestLogging();
