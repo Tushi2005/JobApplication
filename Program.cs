@@ -35,16 +35,20 @@ namespace JobApplication
             builder.Services.AddAutoMapper(typeof(AutoMapperApplication).Assembly);
             builder.Services.AddScoped<IApplicationService, ApplicationService>();
 
+            // Cloudflare Tunnel a Docker hálózatból jön (172.x.x.x), nem loopbackről,
+            // ezért a forwarded headers middleware-t explicit kell engedélyezni minden proxyra
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor |
+                                           ForwardedHeaders.XForwardedProto |
+                                           ForwardedHeaders.XForwardedHost;
+                options.KnownNetworks.Clear();
+                options.KnownProxies.Clear();
+            });
+
             var app = builder.Build();
 
-            // Cloudflare Tunnel proxy mögött az app nem látja a valódi HTTPS scheme-t és hostot,
-            // ezért kell a forwarded headers — nélküle a Google OAuth callback URI-t rosszul konstruálja
-            app.UseForwardedHeaders(new ForwardedHeadersOptions
-            {
-                ForwardedHeaders = ForwardedHeaders.XForwardedFor |
-                                   ForwardedHeaders.XForwardedProto |
-                                   ForwardedHeaders.XForwardedHost
-            });
+            app.UseForwardedHeaders();
 
             app.UseExceptionHandler();
             app.UseSerilogRequestLogging();
