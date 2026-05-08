@@ -1,6 +1,8 @@
 using JobApplication.Models;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 
 namespace JobApplication.Extensions
 {
@@ -8,7 +10,9 @@ namespace JobApplication.Extensions
     {
         public static WebApplication MapCustomEndpoints(this WebApplication app)
         {
-            app.MapIdentityApi<ApplicationUser>();
+            var frontendUrl = app.Configuration["FrontendUrl"]!;
+            app.MapIdentityApi<ApplicationUser>()
+                .RequireRateLimiting("login");
 
             app.MapGet("/api/me", async (HttpContext context, UserManager<ApplicationUser> userManager) =>
             {
@@ -48,9 +52,19 @@ namespace JobApplication.Extensions
                     await userManager.AddLoginAsync(user, new UserLoginInfo("Google", providerKey, "Google"));
                 }
 
-                // 4. Létrehozzuk a Bearer tokent és visszaküldjük
+                // 4. Bearer tokent generálunk és visszairányítunk az Angular appba
+                var tokenOptions = context.RequestServices
+                    .GetRequiredService<IOptionsMonitor<BearerTokenOptions>>()
+                    .Get(IdentityConstants.BearerScheme);
+
                 var principal = await signInManager.CreateUserPrincipalAsync(user);
-                return Results.SignIn(principal, authenticationScheme: IdentityConstants.BearerScheme);
+                var accessToken = tokenOptions.BearerTokenProtector.Protect(
+                    new AuthenticationTicket(principal, IdentityConstants.BearerScheme));
+                var refreshToken = tokenOptions.RefreshTokenProtector.Protect(
+                    new AuthenticationTicket(principal, IdentityConstants.BearerScheme));
+
+                return Results.Redirect(
+                    $"{frontendUrl}/auth/callback?accessToken={accessToken}&refreshToken={refreshToken}");
             });
 
             return app;

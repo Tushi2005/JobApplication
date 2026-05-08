@@ -1,8 +1,10 @@
 using JobApplication.Data;
+using JobApplication.Exceptions;
 using JobApplication.Extensions;
 using JobApplication.Mappers;
 using JobApplication.Services.Applications;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 namespace JobApplication
 {
@@ -12,10 +14,15 @@ namespace JobApplication
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            builder.AddSerilogConfig();
+
             builder.Services.AddDatabase(builder.Configuration);
             builder.Services.AddIdentityConfig(builder.Configuration);
             builder.Services.AddSwaggerConfig();
             builder.Services.AddCorsConfig();
+            builder.Services.AddRateLimitingConfig();
+            builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+            builder.Services.AddProblemDetails();
 
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
@@ -30,6 +37,8 @@ namespace JobApplication
 
             var app = builder.Build();
 
+            app.UseExceptionHandler();
+            app.UseSerilogRequestLogging();
             app.UseSwagger();
             app.UseSwaggerUI();
 
@@ -39,6 +48,7 @@ namespace JobApplication
             }
 
             app.UseCors("AllowAngular");
+            app.UseRateLimiter();
             app.UseAuthentication();
             app.UseAuthorization();
 
