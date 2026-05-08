@@ -3,7 +3,7 @@ WORKDIR /src
 COPY ["JobApplication.csproj", "."]
 RUN dotnet restore
 COPY . .
-RUN dotnet publish -c Release -o /app
+RUN dotnet publish JobApplication.csproj -c Release -o /app
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
