@@ -9,8 +9,8 @@ namespace JobApplication.Extensions
                 options.AddPolicy("AllowAngular", policy =>
                 {
                     policy.WithOrigins(
-                        "http://192.168.1.108:3000",
-                        "http://localhost:4200"
+                        "http://localhost:4200",
+                        "https://jobtracker.adamcloud.hu"
                     )
                     .AllowAnyHeader()
                     .AllowAnyMethod();

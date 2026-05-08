@@ -10,6 +10,7 @@ services:
       - Jwt__Key=${JWT_KEY}
       - Authentication__Google__ClientId=${Authentication__Google__ClientId}
       - Authentication__Google__ClientSecret=${Authentication__Google__ClientSecret}
+      - FrontendUrl=${FrontendUrl}
 
     ports:
       - "8080:8080"

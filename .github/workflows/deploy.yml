@@ -32,6 +32,7 @@ jobs:
           ASPNETCORE_URLS: "http://+:8080"
           Authentication__Google__ClientId: ${{ secrets.GOOGLE_CLIENT_ID }}
           Authentication__Google__ClientSecret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          FrontendUrl: ${{ secrets.FRONTEND_URL }}
         run: |
           cd /mnt/Kulso_HDD/github/actions-runner/_work/JobApplication/JobApplication
           docker compose pull backend
