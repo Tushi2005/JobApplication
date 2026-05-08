@@ -1,4 +1,4 @@
-﻿using JobApplication.DTOs.Application;
+using JobApplication.DTOs.Application;
 using JobApplication.Models;
 
 namespace JobApplication.Services.Applications

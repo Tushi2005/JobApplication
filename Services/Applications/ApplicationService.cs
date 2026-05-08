@@ -1,4 +1,4 @@
-﻿using JobApplication.Data;
+using JobApplication.Data;
 using JobApplication.DTOs.Application;
 using JobApplication.Models;
 using Microsoft.EntityFrameworkCore;

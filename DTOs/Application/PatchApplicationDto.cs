@@ -1,4 +1,4 @@
-﻿using JobApplication.Models;
+using JobApplication.Models;
 
 namespace JobApplication.DTOs.Application
 {
@@ -7,4 +7,3 @@ namespace JobApplication.DTOs.Application
         public ApplicationStatus? Status { get; set; }
     }
 }
-

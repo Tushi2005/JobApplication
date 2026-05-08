@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 
+record RegisterRequest(string Email, string Password, string FullName);
+
 namespace JobApplication.Extensions
 {
     public static class EndpointExtensions
@@ -21,9 +23,34 @@ namespace JobApplication.Extensions
                 return Results.Ok(new { user.Email, user.FullName });
             }).RequireAuthorization();
 
+            // Egyedi register endpoint a fullName kezeléséhez
+            app.MapPost("/api/auth/register", async (
+                RegisterRequest request,
+                UserManager<ApplicationUser> userManager,
+                SignInManager<ApplicationUser> signInManager) =>
+            {
+                var user = new ApplicationUser
+                {
+                    Email = request.Email,
+                    UserName = request.Email,
+                    FullName = request.FullName
+                };
+
+                var result = await userManager.CreateAsync(user, request.Password);
+                if (!result.Succeeded)
+                    return Results.Conflict(new { message = "A regisztráció sikertelen. Valószínűleg az email már használatban van." });
+
+                var principal = await signInManager.CreateUserPrincipalAsync(user);
+                return Results.SignIn(principal, authenticationScheme: IdentityConstants.BearerScheme);
+            }).RequireRateLimiting("login");
+
             app.MapGet("/api/auth/google", () =>
                 Results.Challenge(
-                    new AuthenticationProperties { RedirectUri = "/api/auth/google/callback" },
+                    new AuthenticationProperties
+                    {
+                        RedirectUri = "/api/auth/google/callback",
+                        Parameters = { ["prompt"] = "select_account" }
+                    },
                     ["Google"]
                 ));
 
@@ -58,10 +85,25 @@ namespace JobApplication.Extensions
                     .Get(IdentityConstants.BearerScheme);
 
                 var principal = await signInManager.CreateUserPrincipalAsync(user);
+                var now = DateTimeOffset.UtcNow;
+
                 var accessToken = tokenOptions.BearerTokenProtector.Protect(
-                    new AuthenticationTicket(principal, IdentityConstants.BearerScheme));
+                    new AuthenticationTicket(principal,
+                        new AuthenticationProperties
+                        {
+                            IssuedUtc = now,
+                            ExpiresUtc = now + tokenOptions.BearerTokenExpiration
+                        },
+                        IdentityConstants.BearerScheme));
+
                 var refreshToken = tokenOptions.RefreshTokenProtector.Protect(
-                    new AuthenticationTicket(principal, IdentityConstants.BearerScheme));
+                    new AuthenticationTicket(principal,
+                        new AuthenticationProperties
+                        {
+                            IssuedUtc = now,
+                            ExpiresUtc = now + tokenOptions.RefreshTokenExpiration
+                        },
+                        IdentityConstants.BearerScheme));
 
                 return Results.Redirect(
                     $"{frontendUrl}/auth/callback?accessToken={accessToken}&refreshToken={refreshToken}");

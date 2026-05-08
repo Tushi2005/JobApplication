@@ -22,8 +22,8 @@ namespace JobApplication.Extensions
             services.AddAuthentication(IdentityConstants.BearerScheme)
                 .AddBearerToken(IdentityConstants.BearerScheme, options =>
                 {
-                    options.BearerTokenExpiration = TimeSpan.FromHours(1);
-                    options.RefreshTokenExpiration = TimeSpan.FromDays(14);
+                    options.BearerTokenExpiration = TimeSpan.FromMinutes(15);
+                    options.RefreshTokenExpiration = TimeSpan.FromDays(7);
                 })
                 .AddCookie(IdentityConstants.ApplicationScheme)
                 .AddCookie(IdentityConstants.ExternalScheme)

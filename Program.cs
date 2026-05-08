@@ -25,12 +25,11 @@ namespace JobApplication
             builder.Services.AddProblemDetails();
 
             builder.Services.AddControllers()
-                .AddJsonOptions(options =>
+                .AddNewtonsoftJson(options =>
                 {
-                    options.JsonSerializerOptions.Converters.Add(
-                        new System.Text.Json.Serialization.JsonStringEnumConverter());
-                })
-                .AddNewtonsoftJson();
+                    options.SerializerSettings.Converters.Add(
+                        new Newtonsoft.Json.Converters.StringEnumConverter());
+                });
 
             builder.Services.AddAutoMapper(typeof(AutoMapperApplication).Assembly);
             builder.Services.AddScoped<IApplicationService, ApplicationService>();
