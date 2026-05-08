@@ -4,7 +4,7 @@ namespace JobApplication.Models
 {
     public class ApplicationUser: IdentityUser
     {
-        public required string FullName { get; set; }
+        public string FullName { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }
