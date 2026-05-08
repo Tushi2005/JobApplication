@@ -5,13 +5,13 @@ namespace JobApplication.Services.Applications
 {
     public interface IApplicationService
     {
-        Task<List<ApplicationResponseDto>> GetAllAsync(string userId);
-        Task<ApplicationResponseDto?> GetByIdAsync(int id, string userId);
+        Task<List<ResponseApplicationDto>> GetAllAsync(string userId);
+        Task<ResponseApplicationDto?> GetByIdAsync(int id, string userId);
         Task<List<string>> GetCompaniesByUserAsync(string userId);
         Task<List<string>> GetPositionsByUserAsync(string userId);
-        Task<ApplicationResponseDto> CreateAsync(CreateApplicationDto applicationDto, string userId);
-        Task<ApplicationResponseDto?> UpdateAsync(int id, UpdateApplicationDto applicationDto, string userId);
+        Task<ResponseApplicationDto> CreateAsync(CreateApplicationDto applicationDto, string userId);
+        Task<ResponseApplicationDto?> UpdateAsync(int id, UpdateApplicationDto applicationDto, string userId);
         Task<bool> DeleteAsync(int id, string userId);
-        Task<Application?> PatchStatusAsync(int id, ApplicationStatus status, string userId);
+        Task<ResponseApplicationDto?> PatchStatusAsync(int id, ResponseApplicationDto patchDto, string userId);
     }
 }

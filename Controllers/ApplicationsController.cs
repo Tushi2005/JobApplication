@@ -1,8 +1,7 @@
 using JobApplication.DTOs.Application;
-using JobApplication.Mappers;
-using JobApplication.Models;
 using JobApplication.Services.Applications;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -29,7 +28,7 @@ namespace JobApplication.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<ApplicationResponseDto>>> GetAll()
+        public async Task<ActionResult<List<ResponseApplicationDto>>> GetAll()
         {
             string userId = GetCurrentUserId();
             var applications = await _applicationService.GetAllAsync(userId);
@@ -53,7 +52,7 @@ namespace JobApplication.Controllers
         }
 
         [HttpGet("{id:int}")]
-        public async Task<ActionResult<ApplicationResponseDto>> GetById(int id)
+        public async Task<ActionResult<ResponseApplicationDto>> GetById(int id)
         {
             string userId = GetCurrentUserId();
             var application = await _applicationService.GetByIdAsync(id, userId);
@@ -62,7 +61,7 @@ namespace JobApplication.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<ApplicationResponseDto>> Create([FromBody] CreateApplicationDto applicationDto)
+        public async Task<ActionResult<ResponseApplicationDto>> Create([FromBody] CreateApplicationDto applicationDto)
         {
             string userId = GetCurrentUserId();
             var created = await _applicationService.CreateAsync(applicationDto, userId);
@@ -70,7 +69,7 @@ namespace JobApplication.Controllers
         }
 
         [HttpPut("{id:int}")]
-        public async Task<ActionResult<ApplicationResponseDto>> Update(int id, [FromBody] UpdateApplicationDto updateDto)
+        public async Task<ActionResult<ResponseApplicationDto>> Update(int id, [FromBody] UpdateApplicationDto updateDto)
         {
             string userId = GetCurrentUserId();
 
@@ -89,14 +88,27 @@ namespace JobApplication.Controllers
         }
 
         [HttpPatch("{id:int}")]
-        public async Task<IActionResult> PatchStatus(int id, [FromBody] PatchApplicationStatusDto dto)
+        public async Task<IActionResult> PatchStatus(int id, [FromBody] JsonPatchDocument<ResponseApplicationDto> patchDoc)
         {
             string userId = GetCurrentUserId();
-            if (dto.Status == null) return BadRequest();
+            var application = await _applicationService.GetByIdAsync(id, userId);
 
-            var updated = await _applicationService.PatchStatusAsync(id, dto.Status.Value, userId);
-            if (updated == null) return NotFound();
-            return Ok(updated.ToDto());
+            if (application == null)
+                return NotFound();
+
+            patchDoc.ApplyTo(application, ModelState);
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var result = await _applicationService.PatchStatusAsync(id, application, userId);
+
+            if (result == null)
+                return NotFound();
+
+            return Ok(result);
         }
     }
 }

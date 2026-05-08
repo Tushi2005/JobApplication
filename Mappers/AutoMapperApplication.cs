@@ -9,8 +9,9 @@ namespace JobApplication.Mappers
         public AutoMapperApplication()
         {
             CreateMap<CreateApplicationDto, Application >();
-            CreateMap<Application, ApplicationResponseDto>();
+            CreateMap<Application, ResponseApplicationDto>().ReverseMap();
             CreateMap<Application, UpdateApplicationDto>().ReverseMap();
+            CreateMap<Application, PatchApplicationDto>();
         }
     }
 }

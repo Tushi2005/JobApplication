@@ -17,19 +17,19 @@ namespace JobApplication.Services.Applications
             _mapper = mapper;
         }
 
-        public async Task<List<ApplicationResponseDto>> GetAllAsync(string userId)
+        public async Task<List<ResponseApplicationDto>> GetAllAsync(string userId)
         {
            var applications =  await _context.Applications
                 .Where(a => a.UserId == userId)
                 .ToListAsync();
-            return _mapper.Map<List<ApplicationResponseDto>>(applications);
+            return _mapper.Map<List<ResponseApplicationDto>>(applications);
         }
 
-        public async Task<ApplicationResponseDto?> GetByIdAsync(int id, string userId)
+        public async Task<ResponseApplicationDto?> GetByIdAsync(int id, string userId)
         {
             var application = await _context.Applications
                 .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
-            return _mapper.Map<ApplicationResponseDto>(application);
+            return _mapper.Map<ResponseApplicationDto>(application);
         }
 
         public async Task<List<string>> GetCompaniesByUserAsync(string userId)
@@ -50,16 +50,16 @@ namespace JobApplication.Services.Applications
                 .ToListAsync();
         }
 
-        public async Task<ApplicationResponseDto> CreateAsync(CreateApplicationDto applicationDto, string userId)
+        public async Task<ResponseApplicationDto> CreateAsync(CreateApplicationDto applicationDto, string userId)
         {
             var application = _mapper.Map<Application>(applicationDto);
             application.UserId = userId;
             _context.Applications.Add(application);
             await _context.SaveChangesAsync();
-            return _mapper.Map<ApplicationResponseDto>(application);
+            return _mapper.Map<ResponseApplicationDto>(application);
         }
 
-        public async Task<ApplicationResponseDto?> UpdateAsync(int id, UpdateApplicationDto applicationDto, string userId)
+        public async Task<ResponseApplicationDto?> UpdateAsync(int id, UpdateApplicationDto applicationDto, string userId)
         {
             var existing = await _context.Applications
                 .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
@@ -68,7 +68,7 @@ namespace JobApplication.Services.Applications
             _mapper.Map(applicationDto, existing);
 
             await _context.SaveChangesAsync();
-            return _mapper.Map<ApplicationResponseDto>(existing);
+            return _mapper.Map<ResponseApplicationDto>(existing);
         }
 
         public async Task<bool> DeleteAsync(int id, string userId)
@@ -82,17 +82,17 @@ namespace JobApplication.Services.Applications
             return true;
         }
 
-        public async Task<Application?> PatchStatusAsync(int id, ApplicationStatus status, string userId)
+        public async Task<ResponseApplicationDto?> PatchStatusAsync(int id, ResponseApplicationDto patchDto, string userId)
         {
             var existing = await _context.Applications
                 .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
 
             if (existing == null) return null;
 
-            existing.Status = status;
+            _mapper.Map(patchDto, existing);
             existing.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
-            return existing;
+            return _mapper.Map<ResponseApplicationDto>(existing);
         }
     }
 }

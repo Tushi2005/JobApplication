@@ -2,8 +2,9 @@
 
 namespace JobApplication.DTOs.Application
 {
-    public class PatchApplicationStatusDto
+    public class PatchApplicationDto: ApplicationBaseDto
     {
         public ApplicationStatus? Status { get; set; }
     }
 }
+

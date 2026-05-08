@@ -65,6 +65,11 @@ namespace JobApplication
             // Services
             builder.Services.AddScoped<IApplicationService, ApplicationService>();
 
+            builder.Services
+                .AddControllersWithViews()
+                .AddNewtonsoftJson();
+
+
             builder.Services.AddAutoMapper(typeof(AutoMapperApplication).Assembly);
 
             builder.Services.AddSwaggerGen(options =>
