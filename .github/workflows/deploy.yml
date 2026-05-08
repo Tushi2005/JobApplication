@@ -27,7 +27,8 @@ jobs:
       - name: Deploy on self-hosted runner
         env:
           JWT_KEY: ${{ secrets.JWT_KEY }}
-          ConnectionStrings__DefaultConnection: ${{ secrets.DB_CONNECTION }}
+          DatabaseProvider: Postgres
+          ConnectionStrings__Postgres: ${{ secrets.DB_CONNECTION }}
           ASPNETCORE_ENVIRONMENT: Production
           ASPNETCORE_URLS: "http://+:8080"
           Authentication__Google__ClientId: ${{ secrets.GOOGLE_CLIENT_ID }}

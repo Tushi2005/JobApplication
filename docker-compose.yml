@@ -5,7 +5,8 @@ services:
 
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
-      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+      - DatabaseProvider=${DatabaseProvider}
+      - ConnectionStrings__Postgres=${ConnectionStrings__Postgres}
       - ASPNETCORE_URLS=${ASPNETCORE_URLS}
       - Jwt__Key=${JWT_KEY}
       - Authentication__Google__ClientId=${Authentication__Google__ClientId}
