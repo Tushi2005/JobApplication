@@ -25,8 +25,27 @@ namespace JobApplication
                         new System.Text.Json.Serialization.JsonStringEnumConverter());
                 });
 
+            // Db 
+            var provider = builder.Configuration["DatabaseProvider"];
+            var connectionString = builder.Configuration.GetConnectionString(provider!);
+
             builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+            {
+                switch (provider)
+                {
+                    case "SqlServer":
+                        options.UseSqlServer(connectionString);
+                        break;
+                    case "Postgres":
+                        options.UseNpgsql(connectionString);
+                        break;
+                    case "Azure":
+                        options.UseAzureSql(connectionString);
+                        break;
+                    default:
+                        throw new InvalidOperationException($"Ismeretlen provider: {provider}");
+                }
+            });
 
             // Identity
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
