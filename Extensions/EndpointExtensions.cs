@@ -13,6 +13,9 @@ namespace JobApplication.Extensions
         public static WebApplication MapCustomEndpoints(this WebApplication app)
         {
             var frontendUrl = app.Configuration["FrontendUrl"]!;
+
+            // A MapIdentityApi adja a /login és /refresh endpointokat, de a fullName-t nem kezeli,
+            // ezért van külön /api/auth/register endpointunk
             app.MapIdentityApi<ApplicationUser>()
                 .RequireRateLimiting("login");
 
@@ -23,7 +26,6 @@ namespace JobApplication.Extensions
                 return Results.Ok(new { user.Email, user.FullName });
             }).RequireAuthorization();
 
-            // Egyedi register endpoint a fullName kezeléséhez
             app.MapPost("/api/auth/register", async (
                 RegisterRequest request,
                 UserManager<ApplicationUser> userManager,
@@ -49,6 +51,8 @@ namespace JobApplication.Extensions
                     new AuthenticationProperties
                     {
                         RedirectUri = "/api/auth/google/callback",
+                        // Mindig megmutatja a fiókválasztót, hogy megosztott gépen
+                        // ne lehessen véletlenül más fiókjába belépni
                         Parameters = { ["prompt"] = "select_account" }
                     },
                     ["Google"]
@@ -59,18 +63,16 @@ namespace JobApplication.Extensions
                 UserManager<ApplicationUser> userManager,
                 SignInManager<ApplicationUser> signInManager) =>
             {
-                // 1. Lekérjük a Google által visszaadott adatokat
                 var result = await context.AuthenticateAsync(IdentityConstants.ExternalScheme);
                 if (!result.Succeeded) return Results.Unauthorized();
 
-                // 2. Kinyerjük az email, név és Google ID adatokat
                 var email = result.Principal.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
                 var fullName = result.Principal.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "";
                 var providerKey = result.Principal.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
                 if (email == null || providerKey == null) return Results.Unauthorized();
 
-                // 3. Ha még nincs ilyen user, létrehozzuk és összekapcsoljuk a Google accounttal
+                // Ha még nincs fiókja, automatikusan regisztráljuk a Google profil adataival
                 var user = await userManager.FindByEmailAsync(email);
                 if (user == null)
                 {
@@ -79,7 +81,6 @@ namespace JobApplication.Extensions
                     await userManager.AddLoginAsync(user, new UserLoginInfo("Google", providerKey, "Google"));
                 }
 
-                // 4. Bearer tokent generálunk és visszairányítunk az Angular appba
                 var tokenOptions = context.RequestServices
                     .GetRequiredService<IOptionsMonitor<BearerTokenOptions>>()
                     .Get(IdentityConstants.BearerScheme);
@@ -87,6 +88,7 @@ namespace JobApplication.Extensions
                 var principal = await signInManager.CreateUserPrincipalAsync(user);
                 var now = DateTimeOffset.UtcNow;
 
+                // ExpiresUtc kötelező, különben a BearerTokenHandler érvénytelennek jelöli a tokent
                 var accessToken = tokenOptions.BearerTokenProtector.Protect(
                     new AuthenticationTicket(principal,
                         new AuthenticationProperties
@@ -105,6 +107,8 @@ namespace JobApplication.Extensions
                         },
                         IdentityConstants.BearerScheme));
 
+                // A tokeneket URL paraméterként adjuk át, mert Google callback után
+                // nem tudunk közvetlenül a böngésző localStorage-ba írni
                 return Results.Redirect(
                     $"{frontendUrl}/auth/callback?accessToken={accessToken}&refreshToken={refreshToken}");
             });
