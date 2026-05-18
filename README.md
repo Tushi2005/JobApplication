@@ -1,25 +1,39 @@
 # JobTracker – Backend
 
-ASP.NET Core 10 REST API állásjelentkezések kezeléséhez. ASP.NET Core Identity alapú hitelesítés, Entity Framework Core + PostgreSQL adatbázis, Docker alapú deployment GitHub Actions CI/CD pipeline-nal.
+ASP.NET Core 10 REST API állásjelentkezések kezeléséhez. ASP.NET Core Identity alapú hitelesítés (email/jelszó és Google OAuth), Bearer Token + Refresh Token, Entity Framework Core + PostgreSQL, Docker alapú deployment GitHub Actions CI/CD pipeline-nal, Cloudflare Tunnel-en keresztül.
+
+**Éles URL:** `https://jobtracker-api.adamcloud.hu`
 
 ## Technológiai stack
 
-- **ASP.NET Core 10** – Web API
-- **Entity Framework Core** – Code First, migrációk
-- **PostgreSQL** – adatbázis (éles és fejlesztői környezetben egyaránt)
+- **ASP.NET Core 10** – Web API, Minimal API endpoints
+- **Entity Framework Core** – Code First, migrációk, automatikus alkalmazás induláskor
+- **PostgreSQL** – adatbázis
 - **ASP.NET Core Identity** – felhasználókezelés, jelszó hashelés
-- **JWT Bearer Authentication** – hitelesítés és azonosítás
+- **Bearer Token Authentication** – 15 perces access token, 7 napos refresh token
+- **Google OAuth 2.0** – külső bejelentkezés, automatikus regisztráció
+- **Newtonsoft.Json** – enum string szerializáció
+- **Serilog** – strukturált naplózás
 - **Swagger UI** – API dokumentáció és tesztelés
+- **Rate Limiting** – brute force védelem login végpontokon
 - **Docker + Docker Compose** – konténerizáció
-- **GitHub Actions** – CI/CD pipeline self-hosted runnerrel
+- **GitHub Actions** – CI/CD pipeline self-hosted TrueNAS runnerrel
+- **Cloudflare Tunnel** – HTTPS proxy a helyi szerverre
 
 ## Projekt struktúra
 
 ```
 JobApplication/
 ├── Controllers/
-│   ├── ApplicationsController.cs   # CRUD végpontok jelentkezésekhez
-│   └── AuthController.cs           # Regisztráció és bejelentkezés (Identity)
+│   └── ApplicationsController.cs   # CRUD végpontok jelentkezésekhez
+├── Extensions/
+│   ├── EndpointExtensions.cs       # Minimal API: auth, Google OAuth, /api/me
+│   ├── DatabaseExtensions.cs       # EF Core + provider alapú konfig
+│   ├── IdentityExtensions.cs       # Identity, Bearer token, Google auth beállítások
+│   ├── CorsExtensions.cs           # CORS policy (Angular frontend)
+│   ├── SwaggerExtensions.cs
+│   ├── RateLimitingExtensions.cs
+│   └── SerilogExtensions.cs
 ├── Services/
 │   └── Applications/
 │       ├── IApplicationService.cs
@@ -29,12 +43,13 @@ JobApplication/
 │   ├── ApplicationStatus.cs        # Enum: Sent, InterviewScheduled, stb.
 │   └── ApplicationUser.cs          # IdentityUser leszármazott
 ├── DTOs/
-│   ├── Application/                # Create, Update, Patch, Response DTO-k
-│   └── Auth/                       # Login, Register, Response DTO-k
+│   └── Application/                # Create, Update, Response DTO-k
 ├── Mappers/
-│   └── ApplicationMapper.cs        # Extension method: Application → DTO
+│   └── AutoMapperApplication.cs    # AutoMapper profil
 ├── Data/
 │   └── AppDbContext.cs             # IdentityDbContext<ApplicationUser>
+├── Exceptions/
+│   └── GlobalExceptionHandler.cs
 ├── Migrations/
 ├── Dockerfile
 ├── docker-compose.yml
@@ -45,14 +60,11 @@ JobApplication/
 
 ### Rétegek
 
-A projekt a Separation of Concerns elvét követi:
-
-- **Controller réteg** – kizárólag HTTP kommunikáció, bemeneti validáció, válasz formázás
+- **Controller réteg** – HTTP kommunikáció, bemeneti validáció, válasz formázás
+- **Minimal API endpoints** – hitelesítés, Google OAuth callback, `/api/me`
 - **Service réteg** – üzleti logika, adatbázis műveletek
-- **Mapper réteg** – entitás → DTO átalakítás extension methodok segítségével
+- **AutoMapper** – entitás ↔ DTO átalakítás
 - **Data réteg** – `AppDbContext`, EF Core konfiguráció
-
-Az `IApplicationService` az ASP.NET Core DI konténerbe Scoped élettartammal van regisztrálva. A hitelesítést az ASP.NET Core Identity `UserManager<ApplicationUser>` és `SignInManager<ApplicationUser>` szolgáltatásai kezelik közvetlenül az `AuthController`-ben.
 
 ### Adatmodellek
 
@@ -60,11 +72,10 @@ Az `IApplicationService` az ASP.NET Core DI konténerbe Scoped élettartammal va
 | Mező | Típus | Leírás |
 |------|-------|--------|
 | Id | string (GUID) | Elsődleges kulcs (Identity) |
-| Email | string | Egyedi, kötelező (Identity) |
+| Email | string | Egyedi, kötelező |
 | PasswordHash | string | Identity által kezelt hash |
-| UserName | string | Identity (email-lel megegyezik) |
-| FullName | string | Kötelező, egyedi mező |
-| CreatedAt | DateTime | Létrehozás dátuma |
+| UserName | string | Email-lel megegyezik |
+| FullName | string? | Google OAuth esetén a profil nevéből töltődik |
 
 **Application**
 | Mező | Típus | Leírás |
@@ -92,10 +103,20 @@ Sent | InterviewScheduled | SecondRound | Accepted | Rejected | NoResponse
 
 | Metódus | Végpont | Leírás |
 |---------|---------|--------|
-| POST | `/api/auth/register` | Regisztráció, JWT token visszaadása |
-| POST | `/api/auth/login` | Bejelentkezés, JWT token visszaadása |
+| POST | `/login` | Bejelentkezés, access + refresh token visszaadása |
+| POST | `/register` | Regisztráció (MapIdentityApi) |
+| POST | `/refresh` | Access token megújítása refresh tokennel |
+| GET | `/api/auth/google` | Google OAuth flow indítása |
+| GET | `/api/auth/google/callback` | Google callback kezelése, token generálás |
+| POST | `/api/auth/register` | Regisztráció névvel (saját endpoint) |
 
-### Jelentkezések (JWT szükséges)
+### Bejelentkezett felhasználó
+
+| Metódus | Végpont | Leírás |
+|---------|---------|--------|
+| GET | `/api/me` | Bejelentkezett felhasználó adata (email, fullName) |
+
+### Jelentkezések (Bearer token szükséges)
 
 | Metódus | Végpont | Leírás |
 |---------|---------|--------|
@@ -105,88 +126,101 @@ Sent | InterviewScheduled | SecondRound | Accepted | Rejected | NoResponse
 | GET | `/api/applications/positions` | Saját pozíciók (autocomplete) |
 | POST | `/api/applications` | Új jelentkezés rögzítése |
 | PUT | `/api/applications/{id}` | Jelentkezés teljes frissítése |
-| PATCH | `/api/applications/{id}` | Státusz frissítése |
+| PATCH | `/api/applications/{id}` | Részleges frissítés (JSON Patch RFC 6902) |
 | DELETE | `/api/applications/{id}` | Jelentkezés törlése |
 
-Minden védett végpont kizárólag a bejelentkezett felhasználó saját adatait adja vissza – a userId a JWT tokenből kerül kiolvasásra.
+Minden védett végpont kizárólag a bejelentkezett felhasználó saját adatait adja vissza.
 
 ## Hitelesítés
 
-Az alkalmazás ASP.NET Core Identity + JWT kombinációt használ. A flow:
+### Email/jelszó flow
 
-1. Regisztrációkor az `UserManager.CreateAsync()` kezeli a jelszó hashelését és a felhasználó létrehozását
-2. Bejelentkezéskor a `SignInManager.CheckPasswordSignInAsync()` validálja a jelszót
-3. Sikeres bejelentkezés után a szerver JWT tokent állít elő (Claims: userId, email, fullName)
-4. A kliens minden kéréshez csatolja: `Authorization: Bearer <token>`
-5. Az ASP.NET Core JwtBearer middleware automatikusan validálja (issuer, audience, lifetime, signature)
-6. Hibás bejelentkezésnél a szerver nem árulja el, hogy az email vagy a jelszó volt-e helytelen
+1. `POST /login` – `SignInManager` validálja a jelszót
+2. Az ASP.NET Core Identity Bearer Token middleware kiállít egy **15 perces access tokent** és egy **7 napos refresh tokent**
+3. A kliens minden kéréshez csatolja: `Authorization: Bearer <token>`
+4. Lejárat után a kliens `POST /refresh`-sel kér új tokenpárt
+
+### Google OAuth flow
+
+1. A felhasználó a `/api/auth/google`-ra navigál – `prompt=select_account` biztosítja a fiókválasztót
+2. A backend Google-ra irányítja a felhasználót a regisztrált callback URI-val
+3. Google visszahív `/signin-google`-ra, az ASP.NET Core feldolgozza
+4. A `/api/auth/google/callback` handler:
+   - Ha nincs még fiókja: automatikusan létrehozza a Google profil adataiból
+   - Access token + refresh token generálása
+   - Átirányítás a frontendre URL paraméterként: `/auth/callback?accessToken=...&refreshToken=...`
+
+### Cloudflare Tunnel és proxy beállítás
+
+Az app Cloudflare Tunnel mögött fut, ezért a `UseForwardedHeaders` middleware szükséges – enélkül az app HTTP-nek látja a bejövő kéréseket, és a Google OAuth callback URI-t rosszul konstruálja. A Docker hálózatból érkező proxy (172.x.x.x) explicit engedélyezve van.
 
 ## Lokális fejlesztés
 
 ### Követelmények
 - .NET 10 SDK
-- Docker Desktop
+- PostgreSQL (lokálisan vagy Docker-ben)
 
 ### Indítás
 
-**1. Lokális PostgreSQL indítása Docker-rel:**
-```bash
-docker compose -f docker-compose.dev.yml up -d
-```
-
-**2. Migrációk futtatása:**
-```bash
-dotnet ef database update
-```
-
-**3. Backend indítása:**
-```bash
-dotnet run
-```
-
-Az API elérhető: `http://localhost:5000`  
-Swagger UI: `http://localhost:5000/swagger`
-
-### Környezeti változók (fejlesztői)
-
-Az `appsettings.Development.json` fájlban (git által figyelmen kívül hagyva):
+**1. Fejlesztői konfiguráció** (`appsettings.Development.json`, gitignore-ban):
 ```json
 {
+  "DatabaseProvider": "Postgres",
   "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Port=5432;Database=jobtracker_dev;Username=adam;Password=..."
+    "Postgres": "Host=localhost;Port=5432;Database=jobtracker_dev;Username=adam;Password=..."
   },
-  "Jwt": {
-    "Key": "minimum-32-karakteres-titkos-kulcs",
-    "Issuer": "JobApplication",
-    "Audience": "JobApplicationUsers",
-    "ExpiryInDays": 7
-  }
+  "Authentication": {
+    "Google": {
+      "ClientId": "...",
+      "ClientSecret": "..."
+    }
+  },
+  "FrontendUrl": "https://localhost:4200"
 }
 ```
 
+**2. Migrációk és indítás:**
+```bash
+dotnet ef database update
+dotnet run
+```
+
+Az API elérhető: `https://localhost:7194`  
+Swagger UI: `https://localhost:7194/swagger`
+
 ## CI/CD Pipeline
 
-A GitHub Actions workflow (`deploy.yml`) minden master ágra történő push esetén automatikusan:
+A GitHub Actions workflow (`deploy.yml`) minden `master` ágra történő push esetén automatikusan:
 
-1. Buildeli a Docker image-t
+1. Buildeli a Docker image-t (közvetlenül `.csproj`-ból, nem a `.slnx` solution-ből)
 2. Feltölti Docker Hub-ra (`adamtuska/jobtracker-backend:latest`)
-3. A self-hosted runneren keresztül deploy-olja a szerverre `docker compose`-zal
+3. A self-hosted TrueNAS runneren `docker compose pull` + `docker compose up -d`
 
-Az érzékeny adatok (DB jelszó, JWT kulcs) GitHub Secrets-ben vannak tárolva, és környezeti változóként kerülnek be a konténerbe.
+Az érzékeny adatok GitHub Secrets-ben vannak tárolva:
+
+| Secret | Env változó a konténerben |
+|--------|--------------------------|
+| `DB_CONNECTION` | `ConnectionStrings__Postgres` |
+| `JWT_KEY` | `Jwt__Key` |
+| `GOOGLE_CLIENT_ID` | `Authentication__Google__ClientId` |
+| `GOOGLE_CLIENT_SECRET` | `Authentication__Google__ClientSecret` |
+| `FRONTEND_URL` | `FrontendUrl` |
+
+A `DatabaseProvider=Postgres` env változó a `docker-compose.yml`-ben hardkódelve van (nem titok).
 
 ### Migrációk production környezetben
 
-Az alkalmazás induláskor automatikusan futtatja a pending EF Core migrációkat (`db.Database.Migrate()`), így deploy után az adatbázis séma automatikusan frissül és a meglévő adatok megmaradnak. Nem szükséges manuálisan futtatni a `dotnet ef database update` parancsot a szerveren.
+Az app induláskor automatikusan futtatja a pending EF Core migrációkat (`db.Database.Migrate()`), így deploy után az adatbázis séma automatikusan frissül.
 
 ## Verziókezelés
 
-A fejlesztés feature branch workflow szerint zajlott:
+Feature branch workflow, Conventional Commits konvenció szerint:
 
 - `feat/models` – adatmodellek
 - `feat/ef-setup` – Entity Framework és adatbázis konfiguráció
 - `feat/services` – service réteg
-- `feat/controllers` – controller réteg és JWT hitelesítés
-- `fix/route-collision-400` – útvonal ütközés javítása
-- `refactor/postgreDb` – átállás MSSQL-ről PostgreSQL-re
-
-Commit üzenetek a Conventional Commits konvenció szerint készültek.
+- `feat/controllers` – controller réteg
+- `feat/google-auth` – Google OAuth integráció, Bearer Token, Refresh Token
+- `refactor/postgreDb` – átállás PostgreSQL-re
+- `fix/docker-build` – Dockerfile javítás (.csproj explicit publish)
+- `fix/cloudflare-proxy` – ForwardedHeaders middleware Cloudflare Tunnel-hez
